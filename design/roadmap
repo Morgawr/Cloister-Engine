@@ -1,0 +1,16 @@
+- re-ordering/tidying up source code
+- finish wrapping lwjgl/opengl properly
+- finish wrapping input properly
+- Box2d support
+- Font support for rendering/font library
+- in-game console/repl system
+- move to OpenGL 3.2/3.3
+- exporting/loading gamestate as edn (raw)
+- building example games
+- writing proper documentation and notes
+- easy tools and tutorials
+- testing on OSX/Windows 7/8
+- entity editor (maybe)
+- external component library for common components (maybe)
+- benchmarking
+
