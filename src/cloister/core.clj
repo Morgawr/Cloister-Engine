@@ -257,11 +257,11 @@
   normal screens, first screen and then hud."
   []
   (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
-  (doseq [s (reverse (screen-list))]
-    (doseq [e (sort-by :z-index (query-screen [:render] s))]
-      (when (or (contains? (first (screen-list)) e)
-                (:always-render? @@e))
-        ((:render @@e) @@e))))
+  (doseq [s (reverse (screen-list))
+          e (sort-by :z-index (query-screen [:render] s))]
+    (when (or (contains? (first (screen-list)) e)
+              (:always-render? @@e))
+      ((:render @@e) @@e)))
   (doseq [e (query-hud [:render])]
     ((:render @@e) @@e)))
 
@@ -313,12 +313,12 @@
   "Take care of sending input events to the proper entities."
   [input-state input-time]
   (when-not (nil? (seq input-state))
-    (doseq [s (reverse (screen-list))]
-      (doseq [e (query-screen [:input] s)]
-        (when (and (or (contains? (first (screen-list)) e)
-                       (:always-input? @@e))
-                   (every? true? (map (partial contains? (:input-map @@e)) (keys input-state))))
-          (e-send! e (:input @@e) input-state input-time)))))
+    (doseq [s (reverse (screen-list))
+            e (query-screen [:input] s)]
+      (when (and (or (contains? (first (screen-list)) e)
+                     (:always-input? @@e))
+                 (not (nil? (select-keys input-state (:input-map @@e))))) ; there's at least one key that specfic entity is listening to
+        (e-send! e (:input @@e)  (select-keys input-state (:input-map @@e)) input-time))))
     input-state)
 
 (defn input-routine
@@ -340,11 +340,11 @@
     (when-not (nil? (seq state))
       (doseq [h (query-hud [:mouse])]
         (e-send! h (:mouse @@h) state input-time))
-      (doseq [s (reverse (screen-list))]
-        (doseq [e (query-screen [:mouse] s)]
+      (doseq [s (reverse (screen-list))
+              e (query-screen [:mouse] s)]
           (when (or (contains? (first (screen-list)) e)
                     (:always-mouse? @@e))
-            (e-send! e (:mouse @@e) state input-time))))))
+            (e-send! e (:mouse @@e) state input-time)))))
   nil)
 
 (defn start-engine

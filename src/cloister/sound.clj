@@ -110,7 +110,7 @@
 ; is done playing.
 ; Tickets are implemented by an ever-growing unique ID/int value.
 
-(def max-sources 32)
+(def max-sources 16)
 
 ; Map of currently existing tickets, must always be <= max-sources in size
 (def ticket-map (ref {}))
