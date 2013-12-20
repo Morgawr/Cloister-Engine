@@ -46,9 +46,9 @@
 ; Property 1: (agent) guaranteeing that the order of operations performed on the data
 ; structure are independent, aynchronous and properly ordered.
 ; Property 2: (atom) guaranteeing that the operations are atomic, consistent and
-; immediate (within the limits of STM)
+; immediate (within the limits of STM) <-- THIS HAS BEEN CHANGED TO REFS
 ; How to get both?
-; SOLUTION 1 - Store an atom inside the agent
+; SOLUTION 1 - Store a ref inside the agent
 ; How to make it transparent for queries?
 ; SOLUTION 2 - Actually write agents on top of core.async using priority queues
 ; #2 is sexy as fuck
@@ -90,7 +90,7 @@
 (defmacro entity
   "Return a new entity with the given data components applied to it."
   [data]
-  `(agent (atom (assoc ~data :id (get-next-id)))
+  `(agent (ref (assoc ~data :id (get-next-id)))
           :error-mode :continue
           :error-handler #(@ERROR_HANDLER %1 %2)))
 
@@ -98,12 +98,12 @@
   "Asynchronously send a change of state to an entity, the action is performed inside the
   agent's own thread."
   [entity f & args]
-  (apply send entity (fn [at func & args2] (apply swap! at func args2) at) f args))
+  (apply send entity (fn [at func & args2] (dosync (apply alter at func args2) at)) f args))
 
 (defn e-act!
   "Immediately operate on another entity's state, bypassing the event queue. (Privileged channel)"
   [entity f & args]
-  (apply swap! @entity f args))
+  (dosync (apply alter @entity f args)))
 
 (defn has-tag?
   "Test if a given entity has the given tag."
@@ -125,7 +125,7 @@
 ; for rendering, hud-list is called last
 
 ; Example of individual agent
-; AGENT -> ATOM :
+; AGENT -> REF:
 ; { :init <FN>
 ;   :destroy <FN>
 ;   :update <FN>
