@@ -169,7 +169,6 @@
                                              nil
                                              [id (assoc val :playing? (source-playing? (:source val)))])) m)))))))
 
-; This is going to be a pretty messy and big function ;_;
 (defn request-new-ticket
   "Request a new ticket for a playable source"
   [data type]
@@ -180,11 +179,13 @@
            t (id @ticket-map)
            s (:source t)]
        (alter ticket-map dissoc id)
-       (a/stop-source s)
+       (let [a (agent nil)]
+         (send-off a (fn [_] (a/stop-source s)))) ; trick for IO in transaction
        (let [ticket (spawn-ticket s data type)]
          (alter ticket-map assoc (:id ticket) ticket)
          (:id ticket)))
-     (let [s (first (clojure.set/difference @source-list (into #{} (map :source @ticket-map))))
+     (let [s (first (clojure.set/difference @source-list (into #{} (map (fn [[id val]] (:source val)) @ticket-map))))
+           bbb (println (str "Map: " @ticket-map " List: " @source-list " Chosen: " s))
            ticket (spawn-ticket s data type)]
        (alter ticket-map assoc (:id ticket) ticket)
        (:id ticket)))))
