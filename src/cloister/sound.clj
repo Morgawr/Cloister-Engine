@@ -185,7 +185,6 @@
          (alter ticket-map assoc (:id ticket) ticket)
          (:id ticket)))
      (let [s (first (clojure.set/difference @source-list (into #{} (map (fn [[id val]] (:source val)) @ticket-map))))
-           bbb (println (str "Map: " @ticket-map " List: " @source-list " Chosen: " s))
            ticket (spawn-ticket s data type)]
        (alter ticket-map assoc (:id ticket) ticket)
        (:id ticket)))))
