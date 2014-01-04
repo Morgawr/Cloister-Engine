@@ -1,4 +1,5 @@
 (ns cloister.render
+  (:use cloister.bindings.font)
   (:import (org.newdawn.slick.opengl TextureLoader))
   (:import (org.newdawn.slick.util ResourceLoader))
   (:import (org.newdawn.slick Color))
@@ -32,7 +33,7 @@
   "Load a new font into memory. Has sideeffects."
   [id name type anti-aliasing? size custom?]
   (if-not custom?
-    (swap! CLOISTER_FONTMAP assoc id (TrueTypeFont. (Font. name type size) anti-aliasing?))
+    (swap! CLOISTER_FONTMAP assoc id (TrueTypeFont. (Font. name (map-style type) size) anti-aliasing?))
     (let [in (ResourceLoader/getResourceAsStream name)
           f  (Font/createFont Font/TRUETYPE_FONT in)]
       (.deriveFonte f size)
@@ -71,4 +72,4 @@
 (defn render-string
   "Render given string at given coordinates with given color"
   [id string x y color]
-  (.drawString (@CLOISTER_FONTMAP id) x y string color))
+  (draw-string (@CLOISTER_FONTMAP id) x y string color))
