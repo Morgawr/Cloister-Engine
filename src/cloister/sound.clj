@@ -148,9 +148,19 @@
 (defn get-lowest-priority
   "Return the ticket id with the lowest priority in the ticket list"
   []
-  ; TODO - this now only removes the oldest ticket
-  ; TODO - set up a customizable scheduling algorithm for sources
-  (reduce #(min %1 (first %2)) @ticket-gen @ticket-map))
+  (let [t-map @ticket-map
+        t-list (keys t-map)
+        comparator (fn [tk1 tk2] ; naive ticket comparison, :bgm has priority over :soundfx that has priority over :sample
+                     (let [type1 (:source (t-map tk1))
+                           type2 (:source (t-map tk2))]
+                       (cond
+                        (= type1 type2) (< tk1 tk2)
+                        (and (= :bgm type1)
+                             (or (= :soudfx type2)
+                                 (= :sample type2))) false
+                        (and (= :soundfx type1) (= :sample type2)) false
+                        :else true)))]
+    (first (sort comparator t-list))))
 
 (defn source-playing?
   "If a source is playing at the moment."
