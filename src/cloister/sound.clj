@@ -173,7 +173,7 @@
   []
   (dosync
    (alter ticket-map (fn [m]
-                       (into {} (do (map (fn [[id val]]
+                       (into {} (doall (map (fn [[id val]]
                                            (if (and (= (:type val) :soundfx)
                                                     (not (source-playing? (:source val))))
                                              nil
