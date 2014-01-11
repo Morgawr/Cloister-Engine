@@ -71,7 +71,7 @@
 (defn- reverse-map
   "Reverses a map of key->val to val->key."
   [m]
-  (into {} (map (comp vec reverse) (into [] m))))
+  (into {} (map (comp vec reverse) (vec m))))
 
 (defn kb->key
   "Goes from Keyboard/KEY_* to its related keyword."

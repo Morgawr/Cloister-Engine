@@ -54,8 +54,7 @@
     (integer? value) (AL10/alListeneri pname value)
     (sequential? value) (AL10/alListener3f pname (nth value 0) (nth value 1)  (nth value 2))
     :else
-     (do
-       (AL10/alListener pname value))))
+     (AL10/alListener pname value)))
 
 (defn set-source-value
   "Mapping for various AL10.alSource*()"
