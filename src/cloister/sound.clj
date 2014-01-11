@@ -174,10 +174,9 @@
   (dosync
    (alter ticket-map (fn [m]
                        (into {} (doall (map (fn [[id val]]
-                                           (if (and (= (:type val) :soundfx)
-                                                    (not (source-playing? (:source val))))
-                                             nil
-                                             [id (assoc val :playing? (source-playing? (:source val)))])) m)))))))
+                                              (when-not (and (= (:type val) :soundfx)
+                                                             (not (source-playing? (:source val))))
+                                                [id (assoc val :playing? (source-playing? (:source val)))])) m)))))))
 
 (defn request-new-ticket
   "Request a new ticket for a playable source"
@@ -194,7 +193,7 @@
        (let [ticket (spawn-ticket s data type)]
          (alter ticket-map assoc (:id ticket) ticket)
          (:id ticket)))
-     (let [s (first (clojure.set/difference @source-list (into #{} (map (fn [[id val]] (:source val)) @ticket-map))))
+     (let [s (first (clojure.set/difference @source-list (set (map (fn [[id val]] (:source val)) @ticket-map))))
            ticket (spawn-ticket s data type)]
        (alter ticket-map assoc (:id ticket) ticket)
        (:id ticket)))))
