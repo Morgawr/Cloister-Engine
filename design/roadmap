@@ -1,8 +1,9 @@
+- abstracting time management for update loops in entities
 - re-ordering/tidying up source code
 - finish wrapping lwjgl/opengl properly
 - finish wrapping input properly
 - Box2d support
-- Font support for rendering/font library
+- Font support for rendering/font library (almost done)
 - in-game console/repl system
 - move to OpenGL 3.2/3.3
 - exporting/loading gamestate as edn (raw)
@@ -13,4 +14,4 @@
 - entity editor (maybe)
 - external component library for common components (maybe)
 - benchmarking
-
+- possible LT plugin for gamedev
