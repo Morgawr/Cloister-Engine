@@ -30,7 +30,7 @@
     (.release text)))
 
 (defn load-font!
-  "Load a new font into memory. Has sideeffects."
+  "Load a new font into memory. Has side effects."
   [id name type anti-aliasing? size custom?]
   (if-not custom?
     (swap! CLOISTER_FONTMAP assoc id (TrueTypeFont. (Font. name (map-style type) size) anti-aliasing?))
