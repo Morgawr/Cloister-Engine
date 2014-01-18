@@ -211,11 +211,12 @@
           (swap! CLOISTER_AGENTS update-in [:screen-list n] disj this)))))) ; concurrency warning, possible race condition when creating/removing a screen!
 
 (defn add-screen!
-  "Create a new screen, add it to the list of screens and then initialize all the given entities."
+  "Create a new screen, add it to the list of screens and then initialize all the given entities.
+  Entities are added as a pair of [entity-map [additional-tags]]."
   [to-add]
   (swap! CLOISTER_AGENTS update-in [:screen-list] #(into [#{}] %))
-  (doseq [e to-add]
-    (spawn-entity! e)))
+  (doseq [[e tags] to-add]
+    (apply spawn-entity! e tags)))
 
 (defn pop-screen!
   "Remove the top-most screen from the list of screens and destroy all the entities."
