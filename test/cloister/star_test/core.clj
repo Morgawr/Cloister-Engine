@@ -3,6 +3,7 @@
   (:require [cloister.bindings.graphics :as g])
   (:require [cloister.render :as r])
   (:require [cloister.sound :as s])
+  (:require [cloister.utils :as utils])
   (:use [cloister.bindings.input])
   (:use [cloister.bindings.audio])
   (:import (org.lwjgl.opengl Display
@@ -55,10 +56,10 @@
     :destroy (fn [_]
                (println "Star destroyed."))
     :texture :star-yellow ; default texture base
-    :render (fn [state] ; base rendering function
-              (render-star state))
-    :always-render? false ; <-- this tests if we should render the entity even when it's not on the top screen
-    :z-index 1
+    :render {:fn (fn [state] ; base rendering function
+                   (render-star state))
+             :z-index 1
+             :always? false} ; <-- this tests if we should render the entity even when it's not on the top screen
     :x 0
     :y 0
    })
@@ -66,18 +67,18 @@
 
 ; Specialization of the base star, this one flickers as it updates
 (def flickering-star
-  (assoc star-base
-    :update #(assoc % :texture (flickering))
-    :always-update? false))
+  (utils/deep-merge star-base
+                    {:update {:fn #(assoc % :texture (flickering))
+                              :always? false}}))
 
 ; Specialization of the base star, this one is green and stays even under screens
 (def permanent-star
-  (assoc star-base
-    :always-render? true ; <-- we make it permanent between screen transitions
-    :texture :star-green))
+  (utils/deep-merge star-base
+                    {:render {:always? true} ; <-- we make it permanent between screen transitions
+                     :texture :star-green}))
 
 (def permanent-flickering-star
-  (merge flickering-star permanent-star {:always-update? true}))
+  (utils/deep-merge flickering-star permanent-star {:update {:always? true}}))
 
 (defn move-star
   "Move the star given the coordinates in step."
@@ -90,18 +91,18 @@
       state)))
 
 (def moving-star
-  (assoc star-base
-    :input-map #{:w :a :s :d}
-    :input-func { :w #(move-star %1 {:velx 0 :vely -1} %2 %3)
-                  :a #(move-star %1 {:velx -1 :vely 0} %2 %3)
-                  :s #(move-star %1 {:velx 0 :vely 1} %2 %3)
-                  :d #(move-star %1 {:velx 1 :vely 0} %2 %3)}
-    :always-input? false
-    :z-index 0
-    :input (fn [state input time]
-             (let [{:keys [input-func]} state]
-               (reduce #(((first %2) input-func) %1 (second %2) time)
-                       state (select-keys input (keys input-func)))))))
+  (utils/deep-merge star-base
+                    {:input {:map #{:w :a :s :d}
+                             :func-map { :w #(move-star %1 {:velx 0 :vely -1} %2 %3)
+                                         :a #(move-star %1 {:velx -1 :vely 0} %2 %3)
+                                         :s #(move-star %1 {:velx 0 :vely 1} %2 %3)
+                                         :d #(move-star %1 {:velx 1 :vely 0} %2 %3)}
+                             :always? false
+                             :fn (fn [state input time]
+                                   (let [{:keys [func-map]} (:input state)]
+                                     (reduce #(((first %2) func-map) %1 (second %2) time)
+                                             state (select-keys input (keys func-map)))))}
+                     :render { :z-index 0}}))
 
 (def spawnable-star
   (assoc star-base :init (fn [data x y]
@@ -117,8 +118,8 @@
 (def mouse-listener
     { :init identity
       :destroy identity
-      :mouse mouse-callback
-      :always-mouse? false })
+      :mouse {:fn mouse-callback
+              :always? false }})
 
 
 (defn -main

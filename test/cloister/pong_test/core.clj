@@ -3,6 +3,7 @@
   (:require [cloister.bindings.graphics :as g])
   (:require [cloister.render :as r])
   (:require [cloister.sound :as s])
+  (:require [cloister.utils :as utils])
   (:use [cloister.bindings.input])
   (:use [cloister.bindings.audio])
   (:import (org.lwjgl.opengl Display
@@ -115,22 +116,23 @@
                (assoc :last-update (c/get-time))))
    :destroy (fn [_] nil)
    :texture :ball
-   :render #(render-text %)
-   :always-render? false
-   :z-index 1
+   :render {:fn #(render-text %)
+            :render? false
+            :z-index 1}
    :position base-position
    :speed base-speed
-   :update #(update-ball %)
-   :always-update? false
+   :update {:fn #(update-ball %)
+            :always? false}
    :last-update 0})
 
 (defn init-paddle
   "Data is the base entity data, type is either :player1 or :player2"
   [data type]
   (if (= :player2 type)
-    (assoc data :type type
-                :input-map #{:up :down}
-                :position { :x (- 1280 20 16) :y 200})
+    (utils/deep-merge data
+                      {:type type
+                       :input {:map #{:up :down}}
+                       :position { :x (- 1280 20 16) :y 200}})
     (assoc data :position { :x 20 :y 200})))
 
 (defn move-up
@@ -155,20 +157,21 @@
   {:init init-paddle
    :destroy (fn [_] nil)
    :texture :paddle
-   :render #(render-text %)
+   :render {:fn #(render-text %)
+            :z-index 2
+            :always? false}
    :position base-position ; this will depend on type
    :type :player1
-   :z-index 2
-   :input-map #{:w :s} ; W - S for player 1 up/down
-   :input-func { :w (partial move-up)
-                 :s (partial move-down)
-                 :up (partial move-up)
-                 :down (partial move-down)}
-   :always-input? false
-   :input (fn [state input time] ; TODO refactor this into a utility function because wtf so complex
-            (let [{ :keys [input-func]} state]
-              (reduce #(((first %2) input-func) %1 (second %2) time)
-                      state (select-keys input (keys input-func)))))
+   :input {:map #{:w :s} ; W - S for player 1 up/down
+           :func-map { :w (partial move-up)
+                       :s (partial move-down)
+                       :up (partial move-up)
+                       :down (partial move-down)}
+           :always? false
+           :fn (fn [state input time] ; TODO refactor this into a utility function because wtf so complex
+                 (let [{:keys [func-map]} (:input state)]
+                   (reduce #(((first %2) func-map) %1 (second %2) time)
+                           state (select-keys input (keys func-map)))))}
    })
 
 (defn -main []

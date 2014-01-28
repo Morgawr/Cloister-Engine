@@ -105,10 +105,15 @@
   [entity f & args]
   (dosync (apply alter @entity f args)))
 
-(defn has-tag?
+(defn tagged?
   "Test if a given entity has the given tag."
   [entity tag]
   (contains? @@entity tag))
+
+(defn tagged-in?
+  "Test if a given entity meets the given tag path (path is a vector of keywords/tags)"
+  [entity path]
+  (not (nil? (get-in @@entity path))))
 
 ; Example of agents
 ; {
@@ -128,16 +133,22 @@
 ; AGENT -> REF:
 ; { :init <FN>
 ;   :destroy <FN>
-;   :update <FN>
-;   :always-update? <bool>
-;   :render <FN>
-;   :always-render? <bool>
+;   :update { :fn <FN>
+;             :always? <bool> }
+;   :render { :fn <FN>
+;             :always? <bool>
+;             :z-index <num>}
+;   :input { :fn <FN>
+;            :always? <bool>
+;            :map <keymap>}
+;   :mouse { :fn <FN>
+;            :always? <bool>}
 ;   . . . other stuff
 ; }
 
 
-(def CLOISTER_AGENTS (atom { :screen-list []
-                             :hud-list #{} }))
+(def CLOISTER_AGENTS (ref { :screen-list []
+                            :hud-list #{} }))
 (defn screen-list
   "Return the list of screens, abstracted from the atomicity."
   []
@@ -168,7 +179,7 @@
 (defn query-screen
   "Run a query of given tags paired to the given screen."
   [taglist screen]
-  (filter #(every? true? (map (partial has-tag? %) taglist)) screen))
+  (filter #(every? true? (map (partial tagged? %) taglist)) screen))
 
 (defn query-topmost
   "Return a list of entities having all the tags in the taglist, from the top-most screen."
@@ -189,42 +200,47 @@
 (defn spawn-entity!
   "Create a new entity, call its init function and append it to the top-most screen."
   [data & args]
-  (let [e (entity (apply (:init data) data args))]
-    (swap! CLOISTER_AGENTS update-in [:screen-list 0] conj e)))
+  (dosync
+   (let [e (entity (apply (:init data) data args))]
+     (alter CLOISTER_AGENTS update-in [:screen-list 0] conj e))))
 
 (defn spawn-hud!
   "Create a new entity on the hud, call its init function and append it to the hud."
   [data]
-  (let [e (entity ((:init data) data))]
-    (swap! CLOISTER_AGENTS update-in [:hud-list] conj e)))
+  (dosync
+    (let [e (entity ((:init data) data))]
+      (alter CLOISTER_AGENTS update-in [:hud-list] conj e))))
 
 (defn destroy-entity!
   "Destroy the current entity, it must be called from inside the agent's own thread else
   unwanted consequences (like destroying the wrong entity) might happen."
   [state]
-  (let [this *agent*]
-    ((:destroy state) state)
-    (if (contains? (hud-screen) this)
-      (swap! CLOISTER_AGENTS update-in [:hud-list] disj this)
-      (dotimes [n (count (screen-list))]
-        (when (contains? (nth (screen-list) n) this)
-          (swap! CLOISTER_AGENTS update-in [:screen-list n] disj this)))))) ; concurrency warning, possible race condition when creating/removing a screen!
+  (dosync
+    (let [this *agent*]
+      ((:destroy state) state)
+      (if (contains? (hud-screen) this)
+        (alter CLOISTER_AGENTS update-in [:hud-list] disj this)
+        (dotimes [n (count (screen-list))]
+          (when (contains? (nth (screen-list) n) this)
+            (alter CLOISTER_AGENTS update-in [:screen-list n] disj this)))))))
 
 (defn add-screen!
   "Create a new screen, add it to the list of screens and then initialize all the given entities.
   Entities are added as a pair of [entity-map [additional-tags]]."
   [to-add]
-  (swap! CLOISTER_AGENTS update-in [:screen-list] #(into [#{}] %))
-  (doseq [[e tags] to-add]
-    (apply spawn-entity! e tags)))
+  (dosync
+    (alter CLOISTER_AGENTS update-in [:screen-list] #(into [#{}] %))
+    (doseq [[e tags] to-add]
+      (apply spawn-entity! e tags))))
 
 (defn pop-screen!
   "Remove the top-most screen from the list of screens and destroy all the entities."
   []
-  (let [s (first (screen-list))]
-    (swap! CLOISTER_AGENTS update-in [:screen-list] #(vec (rest %)))
-    (doseq [e s]
-      (e-send! e destroy-entity!))))
+  (dosync
+    (let [s (first (screen-list))]
+      (alter CLOISTER_AGENTS update-in [:screen-list] #(vec (rest %)))
+      (doseq [e s]
+        (e-send! e destroy-entity!)))))
 
 (defn update-fps
   "Update the FPS, should be used and called internally, it is
@@ -250,8 +266,8 @@
     (doseq [e entities]
       (when (or (contains? first-screen e)
                 (contains? (hud-screen) e)
-                (:always-update? @@e))
-        (e-send! e (:update @@e))))))
+                (get-in @@e [:update :always?]))
+        (e-send! e (get-in @@e [:update :fn]))))))
 
 (defn render-entities
   "Called by the render future, it renders the entities in the proper order:
@@ -259,12 +275,12 @@
   []
   (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
   (doseq [s (reverse (screen-list))
-          e (sort-by :z-index (query-screen [:render] s))]
+          e (sort-by (comp :z-index :render) (query-screen [:render] s))]
     (when (or (contains? (first (screen-list)) e)
-              (:always-render? @@e))
-      ((:render @@e) @@e)))
+              (get-in @@e [:render :always?]))
+      ((get-in @@e [:render :fn]) @@e)))
   (doseq [e (query-hud [:render])]
-    ((:render @@e) @@e)))
+    ((get-in @@e [:render :fn]) @@e)))
 
 
 ; Input handling should take all entities with an input component. Entities should have
@@ -317,9 +333,9 @@
     (doseq [s (reverse (screen-list))
             e (query-screen [:input] s)]
       (when (and (or (contains? (first (screen-list)) e)
-                     (:always-input? @@e))
-                 (not (nil? (select-keys input-state (:input-map @@e))))) ; there's at least one key that specfic entity is listening to
-        (e-send! e (:input @@e)  (select-keys input-state (:input-map @@e)) input-time))))
+                     (get-in @@e [:input :always?]))
+                 (not (nil? (select-keys input-state (get-in @@e [:input :key-map]))))) ; there's at least one key that specfic entity is listening to
+        (e-send! e (get-in @@e [:input :fn]) (select-keys input-state (get-in @@e [:input :map])) input-time))))
     input-state)
 
 (defn input-routine
@@ -340,13 +356,12 @@
   (let [state (merge (get-mouse-state) (get-mouse-coords))]
     (when-not (nil? (seq state))
       (doseq [h (query-hud [:mouse])]
-        (e-send! h (:mouse @@h) state input-time))
+        (e-send! h (get-in @@h [:mouse :fn]) state input-time))
       (doseq [s (reverse (screen-list))
               e (query-screen [:mouse] s)]
           (when (or (contains? (first (screen-list)) e)
-                    (:always-mouse? @@e))
-            (e-send! e (:mouse @@e) state input-time)))))
-  nil)
+                    (get-in @@e [:mouse :always?]))
+            (e-send! e (get-in @@e [:mouse :fn]) state input-time))))))
 
 (defn start-engine
   "Spawn the rendering and updating tasks, effectively starting the engine."
