@@ -15,6 +15,7 @@
   (:import (org.lwjgl.input Mouse
                             Keyboard)))
 
+; TODO - REWRITE THIS
 
 (def base-speed { :x 0 :y 0})
 (def max-speed 5)

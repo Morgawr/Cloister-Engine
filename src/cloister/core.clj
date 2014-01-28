@@ -1,4 +1,5 @@
 (ns cloister.core
+  (:require [cloister.utils :as utils])
   (:use cloister.bindings.input)
   (:use cloister.bindings.graphics)
   (:use cloister.sound)
@@ -87,12 +88,18 @@
   [f]
   (reset! ERROR_HANDLER f))
 
-(defmacro entity
+(defmacro entity*
   "Return a new entity with the given data components applied to it."
   [data]
   `(agent (ref (assoc ~data :id (get-next-id)))
           :error-mode :continue
           :error-handler #(@ERROR_HANDLER %1 %2)))
+
+(defn entity
+  "Given an entity base and a set of components,
+  create an entity."
+  [base & components]
+  (entity* (apply utils/deep-merge base components)))
 
 (defn e-send!
   "Asynchronously send a change of state to an entity, the action is performed inside the
@@ -197,19 +204,28 @@
   (let [all-entities (reduce into #{} (conj (screen-list) (hud-screen)))]
     (query-screen taglist all-entities)))
 
+(def get-by-id
+  "Return the entity with the given id."
+  [id]
+  (first (filter #(= id (:id @@%)) (query-all [:id]))))
+
 (defn spawn-entity!
   "Create a new entity, call its init function and append it to the top-most screen."
-  [data & args]
+  [e & args]
   (dosync
-   (let [e (entity (apply (:init data) data args))]
-     (alter CLOISTER_AGENTS update-in [:screen-list 0] conj e))))
+   (let [init-fn (:init @@e)
+         (e-act! e init-fn args)]
+     (alter CLOISTER_AGENTS update-in [:screen-list 0] conj e)))
+  e)
 
 (defn spawn-hud!
   "Create a new entity on the hud, call its init function and append it to the hud."
-  [data]
+  [e & args]
   (dosync
-    (let [e (entity ((:init data) data))]
-      (alter CLOISTER_AGENTS update-in [:hud-list] conj e))))
+    (let [init-fn (:init @@e)
+          (e-act! e init-fn args)]
+      (alter CLOISTER_AGENTS update-in [:hud-list] conj e)))
+  e)
 
 (defn destroy-entity!
   "Destroy the current entity, it must be called from inside the agent's own thread else

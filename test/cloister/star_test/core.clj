@@ -4,6 +4,7 @@
   (:require [cloister.render :as r])
   (:require [cloister.sound :as s])
   (:require [cloister.utils :as utils])
+  (:require [cloister.components :as comps])
   (:use [cloister.bindings.input])
   (:use [cloister.bindings.audio])
   (:import (org.lwjgl.opengl Display
@@ -14,6 +15,8 @@
   (:import (org.newdawn.slick Color))
   (:import (org.lwjgl.input Mouse
                             Keyboard)))
+
+; TODO - REWRITE THIS
 
 
 (defn loader
@@ -47,33 +50,37 @@
     1 :star-blue
     2 :star-green))
 
-; This is a base star entity, it doesn't do much
-(def star-base
-  { :init (fn [data]
-            (assoc data
-              :x (rand-int 1280)
-              :y (rand-int 720)))
-    :destroy (fn [_]
-               (println "Star destroyed."))
-    :texture :star-yellow ; default texture base
-    :render {:fn (fn [state] ; base rendering function
-                   (render-star state))
-             :z-index 1
-             :always? false} ; <-- this tests if we should render the entity even when it's not on the top screen
+(def base-star-tags
+  { :texture :star-yellow ; default texture base
     :x 0
     :y 0
    })
 
+(def base-render
+  (comps/render
+   {:fn (fn [state] ; base rendering function
+          (render-star state))
+    :z-index 1}))
+
+(def base-star-entity
+  (assoc
+    comps/entity-base
+    :init (fn [data]
+            (assoc data
+              :x (rand-int 1280)
+              :y (rand-int 720)))
+    :destroy (fn [_]
+               (println "Star destroyed."))))
 
 ; Specialization of the base star, this one flickers as it updates
-(def flickering-star
-  (utils/deep-merge star-base
-                    {:update {:fn #(assoc % :texture (flickering))
-                              :always? false}}))
+(def flickering-update
+  (comps/update
+   {:fn #(assoc % :texture (flickering))}))
+
 
 ; Specialization of the base star, this one is green and stays even under screens
-(def permanent-star
-  (utils/deep-merge star-base
+(def permanent-comp
+  (utils/deep-merge base-render
                     {:render {:always? true} ; <-- we make it permanent between screen transitions
                      :texture :star-green}))
 
