@@ -66,6 +66,8 @@
 ; :screen-removed tags that map to functions if they want to listen to such events.
 ; TODO
 
+(declare get-next-id)
+
 (defn stacktrace->string
   "Convert stacktrace from exception to string."
   [trace]
@@ -204,7 +206,7 @@
   (let [all-entities (reduce into #{} (conj (screen-list) (hud-screen)))]
     (query-screen taglist all-entities)))
 
-(def get-by-id
+(defn get-by-id
   "Return the entity with the given id."
   [id]
   (first (filter #(= id (:id @@%)) (query-all [:id]))))
@@ -213,8 +215,9 @@
   "Create a new entity, call its init function and append it to the top-most screen."
   [e & args]
   (dosync
-   (let [init-fn (:init @@e)
-         (e-act! e init-fn args)]
+   (let [init-fn (:init @@e)]
+     (when-not (nil? init-fn)
+       (e-act! e init-fn args))
      (alter CLOISTER_AGENTS update-in [:screen-list 0] conj e)))
   e)
 
@@ -222,8 +225,9 @@
   "Create a new entity on the hud, call its init function and append it to the hud."
   [e & args]
   (dosync
-    (let [init-fn (:init @@e)
-          (e-act! e init-fn args)]
+    (let [init-fn (:init @@e)]
+      (when-not (nil? init-fn)
+        (e-act! e init-fn args))
       (alter CLOISTER_AGENTS update-in [:hud-list] conj e)))
   e)
 
@@ -233,7 +237,8 @@
   [state]
   (dosync
     (let [this *agent*]
-      ((:destroy state) state)
+      (when-not (nil? (:destroy this))
+        ((:destroy this) this))
       (if (contains? (hud-screen) this)
         (alter CLOISTER_AGENTS update-in [:hud-list] disj this)
         (dotimes [n (count (screen-list))]
