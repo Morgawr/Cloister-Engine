@@ -25,7 +25,6 @@
          [& rest#]
          {~key-name (reduce into (~ctor ~@init-params) rest#)}))))
 
-
 (defn add-tag
   "Add a tag to the given entity."
   [e name value]
