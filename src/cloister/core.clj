@@ -285,9 +285,10 @@
   (let [entities (query-all [:update])
         first-screen (first (screen-list))]
     (doseq [e entities]
-      (when (or (contains? first-screen e)
-                (contains? (hud-screen) e)
-                (get-in @@e [:update :always?]))
+      (when (and (or (contains? first-screen e)
+                     (contains? (hud-screen) e)
+                     (get-in @@e [:update :always?]))
+                 (not (nil? (get-in @@e [:update :fn]))))
         (e-send! e (get-in @@e [:update :fn]))))))
 
 (defn render-entities
@@ -297,11 +298,13 @@
   (GL11/glClear GL11/GL_COLOR_BUFFER_BIT)
   (doseq [s (reverse (screen-list))
           e (sort-by (comp :z-index :render) (query-screen [:render] s))]
-    (when (or (contains? (first (screen-list)) e)
-              (get-in @@e [:render :always?]))
+    (when (and (or (contains? (first (screen-list)) e)
+                   (get-in @@e [:render :always?]))
+               (not (nil? (get-in @@e [:render :fn]))))
       ((get-in @@e [:render :fn]) @@e)))
   (doseq [e (query-hud [:render])]
-    ((get-in @@e [:render :fn]) @@e)))
+    (when-not (nil? (get-in @@e [:render :fn]))
+      ((get-in @@e [:render :fn]) @@e))))
 
 
 ; Input handling should take all entities with an input component. Entities should have
@@ -355,6 +358,7 @@
             e (query-screen [:input] s)]
       (when (and (or (contains? (first (screen-list)) e)
                      (get-in @@e [:input :always?]))
+                 (not (nil? (get-in @@e [:input :fn])))
                  (not (nil? (select-keys input-state (get-in @@e [:input :key-map]))))) ; there's at least one key that specfic entity is listening to
         (e-send! e (get-in @@e [:input :fn]) (select-keys input-state (get-in @@e [:input :map])) input-time))))
     input-state)
@@ -380,8 +384,9 @@
         (e-send! h (get-in @@h [:mouse :fn]) state input-time))
       (doseq [s (reverse (screen-list))
               e (query-screen [:mouse] s)]
-          (when (or (contains? (first (screen-list)) e)
-                    (get-in @@e [:mouse :always?]))
+          (when (and (or (contains? (first (screen-list)) e)
+                         (get-in @@e [:mouse :always?]))
+                     (not (nil? (get-in @@e [:mouse :fn]))))
             (e-send! e (get-in @@e [:mouse :fn]) state input-time))))))
 
 (defn start-engine
