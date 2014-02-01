@@ -36,7 +36,7 @@
     (swap! CLOISTER_FONTMAP assoc id (TrueTypeFont. (Font. name (map-style type) size) anti-aliasing?))
     (let [in (ResourceLoader/getResourceAsStream name)
           f  (Font/createFont Font/TRUETYPE_FONT in)]
-      (.deriveFonte f size)
+      (.deriveFont f size)
       (swap! CLOISTER_FONTMAP assoc id (TrueTypeFont. f anti-aliasing?)))))
 
 (defn unload-font!
