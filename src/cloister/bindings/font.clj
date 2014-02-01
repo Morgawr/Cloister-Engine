@@ -54,4 +54,6 @@
 (defn map-style
   "Convert a vector of styles into its relative flag combination"
   [flags]
-  (apply bit-or (map font-style-map flags)))
+  (if (empty? flags)
+    0
+    (apply bit-or (map font-style-map flags))))
