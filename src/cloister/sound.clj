@@ -227,6 +227,14 @@
   (set-listener-data (merge default-listener listener-data))
   (init-sources))
 
+(defn stop-audio
+  "Stop the audio engine."
+  []
+  (doseq [k (keys @CLOISTER_SOUNDMAP)]
+    (unload-sound! k))
+  (reset! CLOISTER_SOUNDMAP {})
+  (a/destroy-audio))
+
 (defn bgm-playing?
   "Test if a given bgm is playing or not."
   [id]

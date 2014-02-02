@@ -430,7 +430,8 @@
                                          (reset! input-time (get-time))
                                          (render-entities)
                                          (Display/update))
-                     (destroy-display))
+                     (destroy-display)
+                     (stop-audio))
                    (reset! close-request true)
                    (catch Exception e ; to make sure the update thread stops when the rendering throws an exception
                      (reset! close-request true)

@@ -55,6 +55,7 @@
   (let [[render scheduler done?] (c/start-engine init-data)] ; init our engine
     (c/add-screen! [[(create-text-entity 100 200 "Hello world" :yellow :times-new-roman-bold)]
                     [(create-text-entity 600 50 "This is a font rendering example" :green :times-new-roman)]])
-    @done?))
+    @done?)
+  (System/exit 0))
 
 (-main)
