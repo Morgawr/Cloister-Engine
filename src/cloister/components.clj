@@ -77,3 +77,10 @@
 ;  {:x 100, :y 46})
 ; (speed
 ;  {:x 1.5, :y 0}))
+
+; Further thoughts:
+; Components should probably also have an init/destroy function, or at least
+; have a chance to suppor them. Upon entity initialization the engine should
+; iteratively call all the components that require initialization, then
+; call the entity's own init function (for personalized data input too.)
+; Same (in reverse) for entity destruction.
