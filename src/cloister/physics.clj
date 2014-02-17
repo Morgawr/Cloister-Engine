@@ -24,3 +24,18 @@
 ; (a ticket, similar to the audio engine). With this
 ; ticket then it will be possible to query the physics
 ; world to perform operations on it.
+
+
+; -- INTERFACE ----
+;
+; The engine holds the following state:
+;   - WORLD entity
+;   - world settings
+;   - ticket list/queue for external entities
+;
+; The engine should expose the following functions:
+;    - update function to be sent to the physics thread
+;    - ad-hoc query functions for entities that given a ticket
+;        are able to retrieve (or update) requested data
+;        in a fully threadsafe manner
+;    - functions to add/remove entities by ticketing system

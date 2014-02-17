@@ -1,9 +1,10 @@
 - abstracting time management for update loops in entities
-- re-ordering/tidying up source code
+- re-ordering/tidying up source code - x
 - finish wrapping lwjgl/opengl properly
 - finish wrapping input properly
-- Box2d support
-- Font support for rendering/font library (almost done)
+- Box2d support <-
+- Font support for rendering/font library - x
+- global settings for game
 - in-game console/repl system
 - move to OpenGL 3.2/3.3
 - exporting/loading gamestate as edn (raw)
