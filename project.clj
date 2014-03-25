@@ -3,7 +3,7 @@
   :url "none yet"
   :license {:name "Modified zlib"
             :url "none yet"}
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [lein-light-nrepl "0.0.6"]
                  [org.lwjgl.lwjgl/lwjgl "2.9.0"]
                  [org.lwjgl.lwjgl/lwjgl_util "2.9.0"]
