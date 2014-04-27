@@ -1,5 +1,5 @@
 (ns cloister.physics
-  (:require [cloister.bindings.dyn4j :as dyn])
+  (:require [cloister.bindings.dyn4j :as dyn]))
 
 ; This is just the first draft for a physics engine inside
 ; cloister. There's not much here yet aside from comments
