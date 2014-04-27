@@ -1,9 +1,10 @@
-(ns cloister.physics)
+(ns cloister.physics
+  (:require [cloister.bindings.dyn4j :as dyn])
 
 ; This is just the first draft for a physics engine inside
 ; cloister. There's not much here yet aside from comments
 
-; Physics are tied with the box2d engine, the box2d engine
+; Physics are tied with the dyn4j engine, the dyn4j engine
 ; assumes the existence of a world object that contains
 ; entities with relevant physical data and every iteration
 ; will step through the given entities and simulate their
@@ -37,5 +38,5 @@
 ;    - update function to be sent to the physics thread
 ;    - ad-hoc query functions for entities that given a ticket
 ;        are able to retrieve (or update) requested data
-;        in a fully threadsafe manner
+;        in a fully threadsafe manner <-- this is hard
 ;    - functions to add/remove entities by ticketing system

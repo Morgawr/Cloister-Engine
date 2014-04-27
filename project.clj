@@ -8,7 +8,8 @@
                  [org.lwjgl.lwjgl/lwjgl "2.9.0"]
                  [org.lwjgl.lwjgl/lwjgl_util "2.9.0"]
                  [slick-util "1.0.0"]
-                 [org.jbox2d/jbox2d-library "2.1.2.3"]]
+                 [org.jbox2d/jbox2d-library "2.1.2.3"]
+                 [org.dyn4j/dyn4j "3.1.9"]]
   :jvm-opts [~(str "-Djava.library.path=native/:" (System/getProperty "java.library.path"))]
   :plugins [[lein-marginalia "0.7.1"]]
   :repl-options { :nrepl-middleware [lighttable.nrepl.handler/lighttable-ops] } )
