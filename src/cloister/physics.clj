@@ -87,7 +87,7 @@
     (let [last-time (atom (System/nanoTime))]
       (while (not (realized? finished))
         (let [todo (flush! operation-queue [])]
-          (when-not (empty? todo)
+          (when (seq todo)
             (reduce action-fn world todo)))
         (.updatev CLOISTER_WORLD (/ (double (- (System/nanoTime) @last-time)) NANO_TO_BASE))
         ; TODO - step to update CLOISTER_PHYSMAP

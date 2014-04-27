@@ -74,7 +74,7 @@
   [trace]
   (let [error (java.io.StringWriter. )]
     (.printStackTrace trace (java.io.PrintWriter. error))
-    (.toString error)))
+    (str error)))
 
 ; This is the global error handling function, it's defined as an atom
 ; so it can be modified by users at runtime if necessary.
@@ -348,7 +348,7 @@
 (defn remove-old-input
   "Map all the :down keys to :held and remove all the :up keys."
   [input-state]
-  (into {} (for [[k v] (filter (complement #(= (second %) :up)) input-state)]
+  (into {} (for [[k v] (remove #(= (second %) :up) input-state)]
              [k (if (= :down v) :held v)])))
 
 (defn dispatch-input
