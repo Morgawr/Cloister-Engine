@@ -80,10 +80,13 @@
 (defn run-physics
   "Actual running core inside the physics thread."
   [s finished]
-  (let [settings (dyn/create-settings s)
+  (let [settings (dyn/create-settings (:settings s))
+        bounds (:bounds s) ; this is a { :width a :height b} map
         action-fn (fn [world fun]
                     (fun world))]
     (dyn/set-world-settings CLOISTER_WORLD settings)
+    (when-not (nil? bounds)
+      (dyn/set-world-bounds CLOISTER_WORLD bounds))
     (let [last-time (atom (System/nanoTime))]
       (while (not (realized? finished))
         (let [todo (flush! operation-queue [])]
@@ -106,3 +109,40 @@
           (run-physics phys-settings finished)
           (catch Exception e
             (println (.printStackTrace e))))))))
+
+
+; Physics entity data format, this is just a temporary example
+(def example-format
+  {
+   :shape { ; data related to the specific body shape
+           :type :whatever
+           :parameter1 :value1
+           :parameter2 :value2
+           ; etc
+           }
+   :fixture { ; data related to the body :fixture
+             :parameter1 :value1
+             :parameter2 :value2
+             :parameter3 :value3
+             ; etc
+             }
+   :body { ; additional body parameters
+          :parameter1 :value1
+          :parameter2 :value2
+          ; etc
+          }
+   :mass 0}) ; This type of data will also be stored in the ticket map,
+             ; the physics world will take care of copying all related
+             ; data over after/before every update.
+             ; TODO - make this potentially less expensive, do a diff?
+
+; Adding a joint
+(def example-joint
+  {
+   :body1 :id1
+   :body2 :id2
+   :parameter1 :value1
+   :parameter2 :value2
+   ;etc
+   })
+

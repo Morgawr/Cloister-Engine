@@ -1,4 +1,5 @@
 (ns cloister.bindings.dyn4j
+  (:import (org.dyn4j.collision AxisAlignedBounds))
   (:import (org.dyn4j.dynamics World
                                Settings)))
 
@@ -7,14 +8,24 @@
   ([] (World.)))
 
 (defn set-world-settings
-  "Mapping for World.setSettings"
+  "Mapping for World.setSettings()"
   [world settings]
   (.setSettings world settings))
 
 (defn get-world-settings
-  "Mapping for World.getSettings"
+  "Mapping for World.getSettings()"
   [world]
   (.getSettings world))
+
+(defn set-world-bounds
+  "Mapping for World.setBounds()"
+  [world {:keys [width height]}]
+  (.setBounds world (AxisAlignedBounds. width height)))
+
+(defn get-world-bounds
+  "Mapping for World.getBounds()"
+  [world]
+  (.getBounds world))
 
 (defn give-nil [& rest]
   nil)
