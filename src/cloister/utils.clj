@@ -15,3 +15,12 @@
                           (partition-all 2)
                           (mapcat into-keys))]
     `(let [~@key-bindings] ~@body)))
+
+(defn flush!
+  "Implementation of reset! that returns the old value instead
+  of the new one"
+  [atom newval]
+  (let [val @atom]
+    (if (compare-and-set! atom val newval)
+      val
+      (recur atom newval))))

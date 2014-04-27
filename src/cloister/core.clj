@@ -3,6 +3,7 @@
   (:use cloister.bindings.input)
   (:use cloister.bindings.graphics)
   (:use cloister.sound)
+  (:require [cloister.physics :as phys])
   (:import (org.lwjgl.input Keyboard))
   (:import (org.lwjgl Sys))
   (:import (org.lwjgl.opengl Display
@@ -441,5 +442,5 @@
                                               (Thread/sleep update-interval))
                     (shutdown-agents)
                     (deliver finished true))]
+    (future (phys/start-physics data finished)) ; Physics thread if enabled
     [render scheduler finished]))
-    ; might want to setup the physics engine thread eventually

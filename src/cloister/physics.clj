@@ -1,8 +1,8 @@
 (ns cloister.physics
-  (:require [cloister.bindings.dyn4j :as dyn]))
+  (:require [cloister.bindings.dyn4j :as dyn])
+  (:use [cloister.utils :only [flush!]]))
 
-; This is just the first draft for a physics engine inside
-; cloister. There's not much here yet aside from comments
+(def NANO_TO_BASE 1.0e9)
 
 ; Physics are tied with the dyn4j engine, the dyn4j engine
 ; assumes the existence of a world object that contains
@@ -35,8 +35,74 @@
 ;   - ticket list/queue for external entities
 ;
 ; The engine should expose the following functions:
-;    - update function to be sent to the physics thread
+;    - update function to be sent to the physics thread <-- this is not how it works
 ;    - ad-hoc query functions for entities that given a ticket
 ;        are able to retrieve (or update) requested data
-;        in a fully threadsafe manner <-- this is hard
+;        in a fully threadsafe manner <-- this is hard, using operation-queue for it
 ;    - functions to add/remove entities by ticketing system
+
+; Due to the tricky nature of a non-threadsafe physics engine, we need to
+; specify a proper way to accessing resources without incurring in
+; race conditions. This is done by exposing an epochal public interface,
+; as is usual for Clojure standards, and we let the physics thread handle
+; the exposition of data in a thread safe manner. The physics thread
+; unfortunately will have to export/populate a full state-map every iteration
+; with all the exported public attributes (And the cloister-physmap for our
+; physical entities). This is slower than preferred but I see no clear alternative
+; yet, it should still be fast enough considering there is a full core available
+; for physics which by itself is overkill.
+
+; Dictionary containing all currently enabled tickets for
+; physics entities in the game world
+(def CLOISTER_PHYSMAP (atom {}))
+
+; Ticket generator, always giving unique IDs
+(def ticket-gen (atom 0))
+
+; Physics entities are flgged as not-active until the physics
+; thread actually adds them to the world instance. Entities should
+; always check for active before acting on their physics component.
+(def ticket-base
+  {
+   :id 0
+   :active? false
+   :state {}
+  })
+
+(def CLOISTER_WORLD (dyn/create-world))
+
+; This is a special queue which threads can use to submit
+; operations on the world's state.
+; For example it's possible to change the gravity of the
+; world by passing a closure on the set-gravity function.
+(def operation-queue (atom []))
+
+(defn run-physics
+  "Actual running core inside the physics thread."
+  [s finished]
+  (let [settings (dyn/create-settings s)
+        action-fn (fn [world fun]
+                    (fun world))]
+    (dyn/set-world-settings CLOISTER_WORLD settings)
+    (let [last-time (atom (System/nanoTime))]
+      (while (not (realized? finished))
+        (let [todo (flush! operation-queue [])]
+          (when-not (empty? todo)
+            (reduce action-fn world todo)))
+        (.updatev CLOISTER_WORLD (/ (double (- (System/nanoTime) @last-time)) NANO_TO_BASE))
+        ; TODO - step to update CLOISTER_PHYSMAP
+        (reset! last-time (System/nanoTime))
+        (Thread/sleep 16))))) ; TODO - this sleep interval should be in the global engine settings
+
+(defn start-physics
+  "Called from the game's core. It's effectively a standalone
+  thread running inside the game's core."
+  [data finished]
+  (let [phys-settings (:phys-settings data)
+        enabled? (:phys-enabled? data)]
+    (when enabled?
+      (future
+        (try
+          (run-physics phys-settings finished)
+          (catch Exception e
+            (println (.printStackTrace e))))))))

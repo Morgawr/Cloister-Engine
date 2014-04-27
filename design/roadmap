@@ -2,7 +2,8 @@
 - re-ordering/tidying up source code - x
 - finish wrapping lwjgl/opengl properly
 - finish wrapping input properly
-- Box2d support <-
+- Box2d(dyn4j) support <-
+- Write proper documentation for init parameters in the engine
 - Font support for rendering/font library - x
 - global settings for game
 - in-game console/repl system
